@@ -14,4 +14,9 @@ for t in name_version:
     print 'could not process:', t
   json_str = requests.get('https://pypi.python.org/pypi/{}/json'.format(name)).content
   package_dict = json.loads(json_str)
-  print name, package_dict['info']['license']
+  license_str = package_dict['info']['license']
+  for safe_license in ('MIT', 'BSD', 'Apache', 'PSFL'):
+    if re.search(r'\b{}\b'.format(safe_license), license_str):
+      break
+  else:
+    print name, license_str
