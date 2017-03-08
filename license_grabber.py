@@ -2,21 +2,28 @@ import json, re
 
 import requests
 
+def weird_licenses():
+  for line, license_str in each_license():
+    for safe_license in ('MIT', 'BSD', 'Apache', 'PSFL'):
+      if re.search(r'\b{}\b'.format(safe_license), license_str):
+        break
+    else:
+      print line, license_str
 
-def main():
+def each_license():
   with open('packages.txt') as f:
     text = f.read()
-  lines = text.splitlines()
-  name_version = [re.split('==|<=|>=|<|>', line) for line in lines]
 
-  for t in name_version:
+  for line in text.splitlines():
+    name_version = re.split('==|<=|>=|<|>', line)
     try:
-      package_name, version = t
+      package_name, version = name_version
     except ValueError:
-      print 'could not process:', t
-    get(package_name)
+      print 'could not process:', line
+      continue
+    yield line, pull_license(package_name)
 
-def get(package_name, debug=False):
+def pull_license(package_name, debug=False):
   json_str = requests.get('https://pypi.python.org/pypi/{}/json'.format(package_name)).content
   package_dict = json.loads(json_str)
   if debug:
@@ -27,12 +34,9 @@ def get(package_name, debug=False):
       if classifier.startswith('License'):
         license_str = classifier
         break
-  for safe_license in ('MIT', 'BSD', 'Apache', 'PSFL'):
-    if re.search(r'\b{}\b'.format(safe_license), license_str):
-      break
-  else:
-    print package_name, license_str
+  return license_str
 
 if __name__ == '__main__':
-  main()
-  # get('zipstream', debug=True)
+  for line, license_str in each_license():
+    print line, license_str
+  # pull_license('zipstream', debug=True)
